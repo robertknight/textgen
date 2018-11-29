@@ -57,10 +57,12 @@ need either a CUDA-supporting GPU or a lot of patience for training.
   This allows training to be parallelized while allowing the model to learn
   long-range dependencies:
 
-  Input text: `"one two foo bar"`
+  ```
+  Input text: "one two foo bar"
   Batch size: 2
-  Threads: `["one two", "foo bar"]`
-  Batches: `[["one", "foo"], ["two", "bar"]]`
+  Threads: ["one two", "foo bar"]
+  Batches: [["one", "foo"], ["two", "bar"]]
+  ```
 
 - For multi-layered models, the model in the paper adds skip connections from
   the input to each hidden layer and from each hidden layer to the output.
