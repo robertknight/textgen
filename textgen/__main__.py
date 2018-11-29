@@ -249,7 +249,7 @@ def main():
         dest="epochs",
         type=int,
         help="Number of training epochs",
-        default=10,
+        default=30,
     )
     train_parser.add_argument(
         "--batch-size",
@@ -288,7 +288,7 @@ def main():
         dest="sample_length",
         type=int,
         help="Length of samples to generate",
-        default=100,
+        default=200,
     )
     args = parser.parse_args()
 
