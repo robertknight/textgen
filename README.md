@@ -25,6 +25,30 @@ python textgen generate <source text>
 For best results, `<source text>` needs to be quite large (1MB+) and you will
 need either a CUDA-supporting GPU or a lot of patience for training.
 
+## Training tips
+
+- Use the `--epochs` parameter to control the trade-off between amount of
+  training time and accuracy of the learned model.
+  On English text, the model typically learns to generate words and sentences
+  after a few epochs over a ~1MB source text. In order to generate
+  sensible-looking phrases 30+ epochs are typically needed.
+- When training on a GPU, increasing the batch size via `--batch-size` will
+  reduce the time per epoch, but tends to also reduce the learning rate.
+
+  A batch size of 64 worked well in my tests on a single GPU.
+- On English text, models with a loss of >2 produce samples with very little
+  structure. When the loss is between 1 and 2 some basic word and sentence
+  structure starts to emerge. Plausible phrases start to emerge when the loss
+  gets below 0.5.
+
+## Generation tips
+
+- The model is saved after every epoch, so you can run the `generate` command
+  while the model is still training.
+- The `--temperature` option controls the randomness of the generated text.
+  Values < 1.0 are more conservative, values > 1.0 allow the model to be more
+  "creative" (output less-probable sequences according to the learned model).
+
 ## Differences from the paper
 
 - The paper does not describe how parallelism should be achieved in training.
