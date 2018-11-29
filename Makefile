@@ -9,7 +9,7 @@ generate: .pydeps
 	python textgen generate data/oliver-twist.txt
 
 format:
-	black codegen/*.py
+	black textgen/*.py
 
 lint:
 	flake8 codegen
