@@ -129,14 +129,12 @@ def train(model, train_seqs, epochs, vocab, device, checkpoint_path):
 
 def sample(model, seed_seq, sample_length, device, temperature, vocab):
     batch_size = 1
+
+    # Add null row at start of input sequence to match training data.
     input_ = torch.cat((torch.zeros((1, vocab.size)), seed_seq))
     input_ = torch.unsqueeze(input_, batch_size).to(device)
 
-    if isinstance(model.lstm, nn.LSTM):
-        hidden_shape = (model.lstm_layers, batch_size, model.lstm_size)
-    else:
-        hidden_shape = (batch_size, model.lstm_size)
-
+    hidden_shape = (model.lstm_layers, batch_size, model.lstm_size)
     cell_state = torch.zeros(hidden_shape, device=device)
     hidden_state = torch.zeros(hidden_shape, device=device)
 
@@ -160,17 +158,23 @@ def sample(model, seed_seq, sample_length, device, temperature, vocab):
 
 
 class Model(nn.Module):
-    def __init__(self, vocab_size, use_builtin_lstm=False):
+    def __init__(self, vocab_size, use_custom_lstm=False):
         super().__init__()
         self.lstm_size = 256
-        self.lstm_layers = 3
 
-        if use_builtin_lstm:
-            print("Using PyTorch's LSTM module")
-            self.lstm = nn.LSTM(vocab_size, self.lstm_size, num_layers=self.lstm_layers)
-        else:
+        if use_custom_lstm:
             print("Using custom LSTM module")
-            self.lstm = LSTM(input_size=vocab_size, hidden_size=self.lstm_size)
+            lstm_class = LSTM
+            self.lstm_layers = 1
+        else:
+            lstm_class = nn.LSTM
+            self.lstm_layers = 3
+
+        self.lstm = lstm_class(
+            input_size=vocab_size,
+            hidden_size=self.lstm_size,
+            num_layers=self.lstm_layers,
+        )
         self.linear = nn.Linear(in_features=self.lstm_size, out_features=vocab_size)
 
     def forward(self, x, *args):
@@ -229,11 +233,11 @@ def main():
         default="cuda" if torch.cuda.is_available() else "cpu",
     )
     parser.add_argument(
-        "--builtin-lstm",
-        dest="use_builtin_lstm",
+        "--custom-lstm",
+        dest="use_custom_lstm",
         action="store_true",
         default=True,
-        help="Use PyTorch's own LSTM implementation",
+        help="Use custom LSTM implementation",
     )
     subparsers = parser.add_subparsers(dest="command")
 
@@ -295,7 +299,7 @@ def main():
     vocab = Vocabulary(training_text_chars)
 
     # Prepare model.
-    model = Model(vocab.size, use_builtin_lstm=args.use_builtin_lstm)
+    model = Model(vocab.size, use_custom_lstm=args.use_custom_lstm)
     model.to(device)
 
     if args.command == "generate":

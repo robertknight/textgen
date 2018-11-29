@@ -113,11 +113,20 @@ class LSTM(torch.jit.ScriptModule):
     This has the same basic API as torch.nn.LSTM to make comparisons easy.
     """
 
-    def __init__(self, input_size, hidden_size):
+    __constants__ = ["num_layers"]
+
+    def __init__(self, input_size, hidden_size, num_layers=1):
         super().__init__()
 
         self.cell = LSTMCell(input_size, hidden_size)
         self.add_module("lstm_cell", self.cell)
+
+        if num_layers != 1:
+            # Multiple layers are not supported, but the API includes a layer
+            # dimension in its output tensors for compatibility with PyTorch's
+            # native LSTM.
+            raise ValueError("num_layers parameter can only be 1")
+        self.num_layers = num_layers
 
     @torch.jit.script_method
     def forward(self, x, state: Optional[Tuple[Tensor, Tensor]] = None):
@@ -126,22 +135,26 @@ class LSTM(torch.jit.ScriptModule):
 
         :param x: Input as (seq_length, batch_size, input_dims) tensor
         :param state: Tuple of (hidden_state, cell_state) tensors, each of size
-          (batch_size, hidden_size). Initialized to zeros if None.
+          (num_layers, batch_size, hidden_size). Initialized to zeros if None.
         """
         seq_length, batch_size, input_dims = x.shape
 
         if state is None:
             last_output = torch.zeros(
-                (batch_size, self.cell.hidden_size), device=x.device
+                (self.num_layers, batch_size, self.cell.hidden_size), device=x.device
             )
             cell_state = torch.zeros(
-                (batch_size, self.cell.hidden_size), device=x.device
+                (self.num_layers, batch_size, self.cell.hidden_size), device=x.device
             )
         else:
             last_output, cell_state = torch.jit._unwrap_optional(state)
 
         outputs = []
         for i in range(seq_length):
-            last_output, cell_state = self.cell(x[i], (last_output, cell_state))
-            outputs.append(last_output)
+            last_output, cell_state = self.cell(x[i], (last_output[0], cell_state[0]))
+            # Re-insert the layer dimension.
+            cell_state = torch.unsqueeze(cell_state, dim=0)
+            last_output = torch.unsqueeze(last_output, dim=0)
+            # Return the output from the last layer.
+            outputs.append(last_output[0])
         return torch.stack(outputs), (last_output, cell_state)
