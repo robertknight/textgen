@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import torch
 
@@ -30,9 +32,17 @@ class Vocabulary:
             decoded += self.terms[encoded[i]]
         return decoded
 
+    def save(self, file_):
+        json.dump(self.terms, file_)
+
     @property
     def size(self):
         return len(self.terms)
+
+    @classmethod
+    def load(cls, file_):
+        terms = json.load(file_)
+        return cls(terms)
 
 
 def print_table(headers, items, **kwargs):

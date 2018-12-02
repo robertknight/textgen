@@ -1,3 +1,8 @@
 __pycache__/
 
+# Marker files created by Makefile.
 .pydeps
+
+# Files generating during training.
+model.checkpoint.pt
+vocab.json

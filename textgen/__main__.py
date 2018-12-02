@@ -268,13 +268,19 @@ def main():
 
     # Define "generate" command.
     generate_parser = subparsers.add_parser("generate")
-    generate_parser.add_argument("input", help="Input text file used at training time")
     generate_parser.add_argument(
         "--model",
         dest="model",
         type=str,
         help="Path of trained model to use",
         default="model.checkpoint.pt",
+    )
+    generate_parser.add_argument(
+        "--vocab",
+        dest="vocab",
+        type=str,
+        help="Path of vocabulary file to load",
+        default="vocab.json",
     )
     generate_parser.add_argument(
         "--temperature",
@@ -292,13 +298,17 @@ def main():
     )
     args = parser.parse_args()
 
-    # Process common arguments.
-    device = torch.device(args.device)
-    training_text = "".join(open(args.input))
-    training_text_chars = sorted(list(set(training_text + "$")))
-    vocab = Vocabulary(training_text_chars)
+    # Create or load vocabulary.
+    if args.command == "train":
+        training_text = "".join(open(args.input))
+        training_text_chars = sorted(list(set(training_text)))
+        vocab = Vocabulary(training_text_chars)
+        vocab.save(open("vocab.json", "w"))
+    else:
+        vocab = Vocabulary.load(open(args.vocab))
 
     # Prepare model.
+    device = torch.device(args.device)
     model = Model(vocab.size, use_custom_lstm=args.use_custom_lstm)
     model.to(device)
 

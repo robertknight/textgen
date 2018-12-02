@@ -11,15 +11,16 @@ NVIDIA GPU is very helpful.
 
 ## Usage
 
-```
+```shell
 pip install -r requirements.txt
 
-# Train the model on a source text. The generated model is saved to
-# "model.checkpoint.pt" at the end of each epoch.
+# Train the model on a source text. The vocabulary is determined based on
+# characters in the source text and saved to "vocab.json". The generated model is
+# saved to "model.checkpoint.pt" at the end of each epoch.
 python textgen train <source text>
 
 # Run a REPL loop which reads input sequences and suggests completions.
-python textgen generate <source text>
+python textgen generate
 ```
 
 For best results, `<source text>` needs to be quite large (1MB+) and you will
