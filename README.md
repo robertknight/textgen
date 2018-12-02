@@ -6,7 +6,7 @@ text.
 This project is an implementation of the first part of the 2014 paper ["Generating Sequences With Recurrent Neural Networks"](https://arxiv.org/abs/1308.0850), which concerns
 generating text sequences, using PyTorch.
 
-Requires Python >= 3.6 and PyTorch 1.0. For training on large datasets, an
+Requires Python >= 3.6. For training on large datasets, an
 NVIDIA GPU is very helpful.
 
 ## Usage

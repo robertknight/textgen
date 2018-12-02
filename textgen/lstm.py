@@ -21,7 +21,7 @@ def uniform(shape, min_, max_, requires_grad=False):
     return result
 
 
-class LSTMCell(torch.jit.ScriptModule):
+class LSTMCell(nn.Module):
     __constants__ = ["hidden_size"]
 
     def __init__(self, input_size, hidden_size):
@@ -61,7 +61,6 @@ class LSTMCell(torch.jit.ScriptModule):
 
         self.hidden_size = hidden_size
 
-    @torch.jit.script_method
     def forward(self, x, state: Tuple[Tensor, Tensor]):
         """
         Process a batch through the LSTM cell.
@@ -106,7 +105,7 @@ class LSTMCell(torch.jit.ScriptModule):
         return (output, cell_state)
 
 
-class LSTM(torch.jit.ScriptModule):
+class LSTM(nn.Module):
     """
     Long Short-Term Memory layer.
 
@@ -128,7 +127,6 @@ class LSTM(torch.jit.ScriptModule):
             raise ValueError("num_layers parameter can only be 1")
         self.num_layers = num_layers
 
-    @torch.jit.script_method
     def forward(self, x, state: Optional[Tuple[Tensor, Tensor]] = None):
         """
         Process a batch of sequences and return a batch of outputs.
@@ -147,7 +145,7 @@ class LSTM(torch.jit.ScriptModule):
                 (self.num_layers, batch_size, self.cell.hidden_size), device=x.device
             )
         else:
-            last_output, cell_state = torch.jit._unwrap_optional(state)
+            last_output, cell_state = state
 
         outputs = []
         for i in range(seq_length):
