@@ -8,6 +8,8 @@ Neural Networks" [1].
 """
 
 import argparse
+import os
+import sys
 
 from progress.bar import Bar
 import torch
@@ -163,7 +165,7 @@ class Model(nn.Module):
         self.lstm_size = 256
 
         if use_custom_lstm:
-            print("Using custom LSTM module")
+            print("Using custom LSTM module", file=sys.stderr)
             lstm_class = LSTM
             self.lstm_layers = 1
         else:
@@ -207,11 +209,16 @@ def train_command(args, training_text, vocab, model, device):
 def generate_command(args, vocab, model, device):
     state_dict = torch.load(args.model)
     model.load_state_dict(state_dict)
-    while True:
-        print("Enter starting text for generated output:")
-        seed_str = input("> ")
-        seed = vocab.encode(seed_str)
-        generated_seq = sample(
+
+    if args.sample_length is None:
+        if args.interactive:
+            args.sample_length = 300
+        else:
+            args.sample_length = 2000
+
+    def generate_sample(seed=""):
+        seed = vocab.encode(seed)
+        return sample(
             model,
             seed,
             sample_length=args.sample_length,
@@ -219,7 +226,14 @@ def generate_command(args, vocab, model, device):
             temperature=args.temperature,
             vocab=vocab,
         )
-        print(generated_seq)
+
+    if args.interactive:
+        while True:
+            print("Enter starting text for generated output:")
+            seed_str = input("> ")
+            print(generate_sample(seed_str))
+    else:
+        print(generate_sample())
 
 
 def main():
@@ -236,7 +250,7 @@ def main():
         "--custom-lstm",
         dest="use_custom_lstm",
         action="store_true",
-        default=True,
+        default=False,
         help="Use custom LSTM implementation",
     )
     subparsers = parser.add_subparsers(dest="command")
@@ -269,6 +283,13 @@ def main():
     # Define "generate" command.
     generate_parser = subparsers.add_parser("generate")
     generate_parser.add_argument(
+        "-i, --interactive",
+        dest="interactive",
+        action="store_true",
+        help="Prompt for text to prime generator",
+        default=False,
+    )
+    generate_parser.add_argument(
         "--model",
         dest="model",
         type=str,
@@ -294,7 +315,6 @@ def main():
         dest="sample_length",
         type=int,
         help="Length of samples to generate",
-        default=200,
     )
     args = parser.parse_args()
 
@@ -305,6 +325,12 @@ def main():
         vocab = Vocabulary(training_text_chars)
         vocab.save(open("vocab.json", "w"))
     else:
+        if not os.path.exists(args.vocab):
+            print(
+                f'"{args.vocab}" does not exist. Did you forget to train a model?',
+                file=sys.stderr,
+            )
+            sys.exit(1)
         vocab = Vocabulary.load(open(args.vocab))
 
     # Prepare model.

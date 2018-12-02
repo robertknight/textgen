@@ -19,7 +19,8 @@ pip install -r requirements.txt
 # saved to "model.checkpoint.pt" at the end of each epoch.
 python textgen train <source text>
 
-# Run a REPL loop which reads input sequences and suggests completions.
+# Generate a text sample using the trained model. Use "--interactive" to
+# prompt for inputs to seed the sampling process.
 python textgen generate
 ```
 
